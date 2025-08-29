@@ -1,4 +1,6 @@
-const port =4000;
+/* //const port =4000;
+const port = process.env.PORT || 4000;
+
 const express=require("express")
 const app=express();
 const jwt=require("jsonwebtoken");
@@ -8,13 +10,22 @@ const cors=require("cors");
 const path = require("path");
 const { error } = require("console");
 app.use(express.json());
-app.use(cors());
+//app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000',
+  "https://ebissamideksa.github.io"
+], // allow  local frontend/github frontend to access backend
+  methods: ['GET', 'POST', 'DELETE'],
+  credentials: true
+}));
+
 
 //j3WMqrmqk3UjNKuo 
 //neweebbiwaan1@admin
 //mongodb+srv://neweebbiwaan1:<db_password>@cluster0.yvnskih.mongodb.net/
 mongoose.connect("mongodb+srv://neweebbiwaan1:j3WMqrmqk3UjNKuo@cluster0.yvnskih.mongodb.net/e-commerce")
 
+//ecommerce-backend-producing.up.railway.app
 
 //API creation
 app.get("/",(req,res)=>{
@@ -49,7 +60,10 @@ app.use("/images", express.static("./uploads/images"));
 app.post("/upload", upload.single("product"), (req, res) => {
   res.json({ 
     success:1,
-    imageUrl: `http://localhost:${port}/images/${req.file.filename}` });
+   // imageUrl: `http://localhost:${port}/images/${req.file.filename}` 
+   imageUrl: `https://ecommerce-backend-producing.up.railway.app/images/${req.file.filename}`
+
+   });
 
 }); 
 
@@ -129,20 +143,7 @@ const Users=mongoose.model('Users',{
 //Creating the Endpoint for registering the user
 
 app.post('/signup',async(req,res)=>{  
-  /* const { name, email, password } = req.body;
-
-  // Check if user already exists
-  const existingUser = await Users.findOne({ email });
-  if (existingUser) {
-    return res.status(400).json({ message: "User already exists with this email" });
-  }
-
-  // Create new user
-  const newUser = new Users({ name, email, password });
-  await newUser.save();
-
-  res.status(201).json({ message: "User registered successfully" }); */
-
+  
   let check=await Users.findOne({ email: req.body.email });
   if (check) {
     return res.status(400).json({ succes:false, errors: "User already exists with this email" });
@@ -171,7 +172,8 @@ app.post('/signup',async(req,res)=>{
 
   //Create JWT token
 
-  const token = jwt.sign(data, 'secret_ecom' /* "your_jwt_secret", { expiresIn: "1h" } */);
+  const token = jwt.sign(data, 'secret_ecom' );
+  // "your_jwt_secret", { expiresIn: "1h" } 
 
   res.json({ success: true, token , name: user.name });
   //res.json({ success: true, message: "User registered successfully" });
@@ -181,33 +183,10 @@ app.post('/signup',async(req,res)=>{
 //Creating the Endpoint for logging in the user
 
 app.post('/login', async (req, res) => {
-  
-/*   
-const { email, password } = req.body;
-
-  // Check if user exists
-  const user = await Users.findOne({ email });
-  if (!user) {
-    return res.status(400).json({ success: false, message: "Invalid email or password" });
-  }
-
-  // Check password
-  if (user.password !== password) {
-    return res.status(400).json({ success: false, message: "Invalid email or password" });
-  }
-
-  // Create JWT token
-  const token = jwt.sign({ id: user._id }, 'secret_ecom', { expiresIn: "1h" });
-
-  res.json({ success: true, token }); */
 
   const user=await Users.findOne({ email:req.body.email });
   if (user) {
-   /*  const passCompare=await bcrypt.compare(req.body.password,user.password);
-    if (passCompare) {
-      const token = jwt.sign({ id: user._id }, 'secret_ecom', { expiresIn: "1h" });
-      return res.json({ success: true, token });
-    } */
+   
    const passCompare=req.body.password===user.password;
 
    if (passCompare) {
@@ -289,7 +268,7 @@ app.post('/addtocart', fetchUser, async (req, res) => {
 
   let userData=await Users.findOne({_id:req.user.id});
   if(userData.CartData[req.body.itemId]>0)
-  /* userData.CartData[req.body.itemId]-=1; */
+   //userData.CartData[req.body.itemId]-=1; 
   userData.CartData[req.body.itemId]=0;
   await Users.findOneAndUpdate({_id:req.user.id},{CartData:userData.CartData});
   res.json({ success: true, message: "Item removed from cart" });
@@ -320,4 +299,228 @@ app.delete('/user/:id', fetchUser, async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, error: 'Server error' });
   }
+});
+ */
+
+const port = process.env.PORT || 4000;
+
+const express = require("express");
+const app = express();
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const multer = require("multer");
+const cors = require("cors");
+const path = require("path");
+
+app.use(express.json());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    "https://ebissamideksa.github.io"
+  ], // allow local frontend/github frontend to access backend
+  methods: ['GET', 'POST', 'DELETE'],
+  credentials: true
+}));
+
+// ✅ MongoDB connection
+mongoose.connect("mongodb+srv://neweebbiwaan1:j3WMqrmqk3UjNKuo@cluster0.yvnskih.mongodb.net/e-commerce")
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ DB Connection Error:", err));
+
+// ✅ Base API route
+app.get("/", (req, res) => {
+  res.send(`App is running on Express. Backend is live!`);
+});
+
+// ✅ Start server
+app.listen(port, (error) => {
+  if (error) {
+    console.error(`Error starting server: ${error}`);
+  } else {
+    console.log(`✅ Server is running on port ${port}`);
+  }
+});
+
+// ✅ Multer for Image Upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "./uploads/images");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+const upload = multer({ storage });
+
+// ✅ Static Images
+app.use("/images", express.static("./uploads/images"));
+
+// ✅ Upload Endpoint
+app.post("/upload", upload.single("product"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: 0, message: "No file uploaded" });
+  }
+  res.json({
+    success: 1,
+    imageUrl: `https://ecommerce-backend-producing.up.railway.app/images/${req.file.filename}`
+  });
+});
+
+// ✅ Product Schema
+const productSchema = new mongoose.Schema({
+  id: { type: Number, required: true },
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  category: {
+    type: String,
+    required: true,
+    set: v => v.trim().toLowerCase()
+  },
+  old_price: { type: Number, required: true },
+  new_price: { type: Number, required: true },
+  date: { type: Date, default: Date.now },
+  available: { type: Boolean, default: true }
+});
+const Product = mongoose.model("Product", productSchema);
+
+// ✅ Add Product
+app.post("/addproduct", async (req, res) => {
+  try {
+    const products = await Product.find({});
+    const id = products.length > 0 ? products[products.length - 1].id + 1 : 1;
+
+    const product = new Product({
+      id,
+      name: req.body.name,
+      image: req.body.image,
+      category: req.body.category,
+      old_price: req.body.old_price,
+      new_price: req.body.new_price,
+    });
+
+    await product.save();
+    res.json({ success: true, name: req.body.name });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Failed to add product" });
+  }
+});
+
+// ✅ Delete Product
+app.delete("/deleteproduct/:id", async (req, res) => {
+  await Product.findOneAndDelete({ id: req.params.id });
+  res.json({ success: true, name: req.params.id });
+});
+
+// ✅ Get All Products
+app.get("/all_products", async (req, res) => {
+  const products = await Product.find({});
+  res.json({ success: true, products });
+});
+
+// ✅ User Schema
+const Users = mongoose.model('Users', {
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  CartData: { type: Object, default: {} },
+  date: { type: Date, default: Date.now }
+});
+
+// ✅ Register User
+app.post('/signup', async (req, res) => {
+  const check = await Users.findOne({ email: req.body.email });
+  if (check) {
+    return res.status(400).json({ success: false, errors: "User already exists" });
+  }
+
+  let cart = {};
+  for (let i = 0; i <= 300; i++) {
+    cart[i] = 0;
+  }
+
+  const user = new Users({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    CartData: cart
+  });
+
+  await user.save();
+
+  const token = jwt.sign({ user: { id: user.id } }, 'secret_ecom');
+  res.json({ success: true, token, name: user.name });
+});
+
+// ✅ Login User
+app.post('/login', async (req, res) => {
+  const user = await Users.findOne({ email: req.body.email });
+  if (!user) {
+    return res.status(400).json({ success: false, message: "Invalid email" });
+  }
+
+  const passCompare = req.body.password === user.password;
+  if (!passCompare) {
+    return res.json({ success: false, error: "Wrong password" });
+  }
+
+  const token = jwt.sign({ user: { id: user._id } }, 'secret_ecom', { expiresIn: "1h" });
+  res.json({ success: true, token, name: user.name });
+});
+
+// ✅ Middleware to fetch user
+const fetchUser = (req, res, next) => {
+  const token = req.header('auth-token');
+  if (!token) return res.status(401).send({ errors: "Please authenticate" });
+
+  try {
+    const verified = jwt.verify(token, 'secret_ecom');
+    req.user = verified.user;
+    next();
+  } catch (error) {
+    res.status(401).send({ errors: "Invalid token" });
+  }
+};
+
+// ✅ Cart Endpoints
+app.post('/addtocart', fetchUser, async (req, res) => {
+  let userData = await Users.findOne({ _id: req.user.id });
+  userData.CartData[req.body.itemId] += 1;
+  await Users.findOneAndUpdate({ _id: req.user.id }, { CartData: userData.CartData });
+  res.json({ success: true });
+});
+
+app.post('/removefromcart', fetchUser, async (req, res) => {
+  let userData = await Users.findOne({ _id: req.user.id });
+  if (userData.CartData[req.body.itemId] > 0) {
+    userData.CartData[req.body.itemId] = 0;
+  }
+  await Users.findOneAndUpdate({ _id: req.user.id }, { CartData: userData.CartData });
+  res.json({ success: true });
+});
+
+app.post('/getcartdata', fetchUser, async (req, res) => {
+  let userData = await Users.findOne({ _id: req.user.id });
+  res.json({ success: true, cartData: userData.CartData });
+});
+
+// ✅ Delete User (with token check)
+app.delete('/user/:id', fetchUser, async (req, res) => {
+  if (req.user.id !== req.params.id) {
+    return res.status(403).json({ success: false, error: 'Unauthorized' });
+  }
+  await Users.findOneAndDelete({ _id: req.params.id });
+  res.json({ success: true });
+});
+
+// ✅ New Collection Endpoint
+app.get('/newcollection', async (req, res) => {
+  const products = await Product.find({});
+  res.send(products.slice(1).slice(-10));
+});
+
+// ✅ Popular Women Collection
+app.get('/popularwomen', async (req, res) => {
+  const products = await Product.find({ category: "women" });
+  res.send(products.slice(0, 6));
 });
