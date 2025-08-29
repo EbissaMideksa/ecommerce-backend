@@ -1,4 +1,4 @@
-/* //const port =4000;
+ //const port =4000;
 const port = process.env.PORT || 4000;
 
 const express=require("express")
@@ -300,9 +300,9 @@ app.delete('/user/:id', fetchUser, async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
- */
+ 
 
-const port = process.env.PORT || 4000;
+/* const port = process.env.PORT || 4000;
 
 const express = require("express");
 const app = express();
@@ -524,3 +524,4 @@ app.get('/popularwomen', async (req, res) => {
   const products = await Product.find({ category: "women" });
   res.send(products.slice(0, 6));
 });
+ */
